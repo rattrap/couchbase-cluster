@@ -7,32 +7,6 @@ resource "aws_key_pair" "key_pair" {
   public_key = "${file(var.public_key_path)}"
 }
 
-data "aws_ami" "amazonlinux" {
-  most_recent = true
-
-  owners = ["137112412989"]
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["amzn-ami-hvm-*"]
-  }
-}
-
 module "networking" {
   source  = "./modules/networking"
   project = "${var.project}"
@@ -40,10 +14,23 @@ module "networking" {
 }
 
 module "couchbase" {
-  source          = "./modules/couchbase"
+  source          = "./modules/autoscaling-group"
   project         = "${var.project}"
+  type            = "couchbase"
   region          = "${var.region}"
-  ami_id          = "${data.aws_ami.amazonlinux.image_id}"
+  ami_size        = "t2.micro"
+  key_name        = "${var.key_name}"
+  security_groups = ["${module.networking.security_groups}"]
+  subnets         = ["${module.networking.subnets}"]
+  min_size        = "1"
+  max_size        = "1"
+}
+
+module "app" {
+  source          = "./modules/autoscaling-group"
+  project         = "${var.project}"
+  type            = "app"
+  region          = "${var.region}"
   ami_size        = "t2.micro"
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]

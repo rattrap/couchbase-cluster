@@ -1,6 +1,6 @@
 variable "project" {}
+variable "type" {}
 variable "region" {}
-variable "ami_id" {}
 variable "ami_size" {}
 variable "key_name" {}
 
