@@ -1,0 +1,130 @@
+---
+- name: Install a Couchbase cluster
+  hosts: couchbase
+  become: yes
+  become_method: sudo
+  vars:
+      rpm_name: couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm
+      rpm_url: http://packages.couchbase.com/releases/3.0.3/{{ rpm_name }}
+      rpm_path: /root/{{ rpm_name }}
+      ns_server_path: /root/ns_server
+      generate_cert_path: /root/ns_server/deps/generate_cert
+      gozip_path: /root/ns_server/deps/gozip
+      couchbase_bin_path: /opt/couchbase/bin
+      couchbase_username: Administrator
+      couchbase_password: safepass
+
+  tasks:
+  - name: Upgrade all packages
+    yum:
+      name: "*"
+      state: latest
+
+  - name: Download couchbase-server
+    get_url:
+      url: "{{ rpm_url }}"
+      dest: "{{ rpm_path }}"
+
+  - name: Install couchbase-server rpm
+    yum:
+      name: "{{ rpm_path }}"
+      state: present
+
+  - name: Delete couchbase-server rpm
+    file:
+      state: absent
+      path: "{{ rpm_path }}"
+
+  - name: Stop the couchbase-server
+    service:
+      name: couchbase-server
+      state: stopped
+
+  - name: Install the latest version of golang
+    package:
+      name: golang
+      state: latest
+
+  - name: Install the latest version of git
+    package:
+      name: git
+      state: latest
+
+  - name: Clone
+    git:
+      repo: https://github.com/couchbase/ns_server.git
+      dest: "{{ ns_server_path }}"
+      version: 3.0.0
+
+  - name: Uninstall git
+    package:
+      name: git
+      state: absent
+
+  - name: Recompile the generate_cert package
+    shell: "go build"
+    args:
+      chdir: "{{ generate_cert_path }}"
+      creates: "{{ generate_cert_path }}/generate_cert"
+
+  - name: Recompile the gozip package
+    shell: "go build"
+    args:
+      chdir: "{{ gozip_path }}"
+      creates: "{{ gozip_path }}/gozip"
+
+  - name: Overwrite the original generate_cert binary
+    shell: "yes | cp {{ generate_cert_path }}/generate_cert {{ couchbase_bin_path }}/generate_cert; chown bin:bin {{ couchbase_bin_path }}/generate_cert; chmod 755 {{ couchbase_bin_path }}/generate_cert"
+
+  - name: Overwrite the original gozip binary
+    shell: "yes | cp {{ gozip_path }}/gozip {{ couchbase_bin_path }}/gozip; chown bin:bin {{ gozip_path }}/gozip; chmod 755 {{ gozip_path }}/gozip"
+
+  - file:
+      state: absent
+      path: "{{ns_server_path}}/"
+
+  - name: Uninstall golang
+    package:
+      name: golang
+      state: absent
+
+  - name: Start the couchbase-server
+    service:
+      name: couchbase-server
+      state: started
+      enabled: true
+
+  - name: Cluster init
+    shell: |
+      sleep 5 && \
+      /opt/couchbase/bin/couchbase-cli cluster-init \
+        -c 127.0.0.1:8091 \
+        -u {{ couchbase_username }} \
+        -p {{ couchbase_password }} \
+        --cluster-init-ramsize=256
+
+  - name: Create bucket
+    shell: |
+      if [[ $(/opt/couchbase/bin/couchbase-cli bucket-list -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | wc -c) -eq 0 ]]; then \
+      /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} --bucket=produse --bucket-type=memcached --bucket-port=11212 --bucket-ramsize=256; \
+      fi 
+    when: inventory_hostname == groups['couchbase'][0]
+
+  - name: Cluster join
+    shell: |
+      /opt/couchbase/bin/couchbase-cli server-add \
+        -c {{ groups['couchbase'][0] }} \
+        -u {{ couchbase_username }} \
+        -p {{ couchbase_password }} \
+        --server-add={{ inventory_hostname }}:8091 \
+        --server-add-username={{ couchbase_username }} \ 
+        --server-add-password={{ couchbase_password }}
+    when: inventory_hostname in groups['couchbase'][1:]
+
+  - name: Rebalance cluster
+    shell: |
+      /opt/couchbase/bin/couchbase-cli rebalance \
+        -c 127.0.0.1:8091 \
+        -u {{ couchbase_username }} \
+        -p {{ couchbase_password }}
+    when: inventory_hostname == groups['couchbase'][0]

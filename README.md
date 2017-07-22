@@ -8,3 +8,6 @@ terraform plan
 terraform apply
 ```
 ## Ansible
+```
+ansible-playbook couchbase.yml -i hosts
+```
