@@ -128,23 +128,10 @@
       name: nginx
       state: latest
 
-  - name: Fix server_names_hash_bucket_size
-    lineinfile:
-      dest: /etc/nginx/nginx.conf
-      regexp: '^server_names_hash_bucket_size '
-      insertafter: 'http {'
-      line: 'server_names_hash_bucket_size 128;'
-
-  - name: Fix worker_processes
-    lineinfile:
-      dest: /etc/nginx/nginx.conf
-      regexp: '^worker_processes '
-      line: 'worker_processes 24;'
-
   - name: Configure nginx
     template:
-      src: templates/default.conf.j2
-      dest: /etc/nginx/conf.d/default.conf
+      src: templates/nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
       owner: root
       group: root
       mode: 0644
