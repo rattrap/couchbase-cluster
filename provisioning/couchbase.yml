@@ -1,6 +1,7 @@
 ---
 - name: Install a Couchbase cluster
   hosts: couchbase
+  gather_facts: no
   become: yes
   become_method: sudo
   vars:
@@ -30,23 +31,18 @@
       name: "{{ rpm_path }}"
       state: present
 
-  - name: Delete couchbase-server rpm
-    file:
-      state: absent
-      path: "{{ rpm_path }}"
-
   - name: Stop the couchbase-server
     service:
       name: couchbase-server
       state: stopped
 
   - name: Install the latest version of golang
-    package:
+    yum:
       name: golang
       state: latest
 
   - name: Install the latest version of git
-    package:
+    yum:
       name: git
       state: latest
 
@@ -55,11 +51,6 @@
       repo: https://github.com/couchbase/ns_server.git
       dest: "{{ ns_server_path }}"
       version: 3.0.0
-
-  - name: Uninstall git
-    package:
-      name: git
-      state: absent
 
   - name: Recompile the generate_cert package
     shell: "go build"
@@ -78,15 +69,6 @@
 
   - name: Overwrite the original gozip binary
     shell: "yes | cp {{ gozip_path }}/gozip {{ couchbase_bin_path }}/gozip; chown bin:bin {{ gozip_path }}/gozip; chmod 755 {{ gozip_path }}/gozip"
-
-  - file:
-      state: absent
-      path: "{{ns_server_path}}/"
-
-  - name: Uninstall golang
-    package:
-      name: golang
-      state: absent
 
   - name: Start the couchbase-server
     service:
