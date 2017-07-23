@@ -80,7 +80,7 @@
     shell: |
       sleep 5 && \
       /opt/couchbase/bin/couchbase-cli cluster-init \
-        -c 127.0.0.1:8091 \
+        -c {{ inventory_hostname }}:8091 \
         -u {{ couchbase_username }} \
         -p {{ couchbase_password }} \
         --cluster-init-ramsize=256
@@ -88,19 +88,21 @@
   - name: Create bucket
     shell: |
       if [[ $(/opt/couchbase/bin/couchbase-cli bucket-list -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | wc -c) -eq 0 ]]; then \
-      /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} --bucket=produse --bucket-type=memcached --bucket-port=11212 --bucket-ramsize=256; \
+        /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} --bucket=produse --bucket-type=memcached --bucket-port=11212 --bucket-ramsize=256; \
       fi 
     when: inventory_hostname == groups['couchbase'][0]
 
   - name: Cluster join
     shell: |
-      /opt/couchbase/bin/couchbase-cli server-add \
-        -c {{ groups['couchbase'][0] }} \
-        -u {{ couchbase_username }} \
-        -p {{ couchbase_password }} \
-        --server-add={{ inventory_hostname }}:8091 \
-        --server-add-username={{ couchbase_username }} \ 
-        --server-add-password={{ couchbase_password }}
+      if [[ $(/opt/couchbase/bin/couchbase-cli server-list -c {{ groups['couchbase'][0] }}:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | grep {{ inventory_hostname }} | wc -c) -eq 0 ]]; then \
+        /opt/couchbase/bin/couchbase-cli server-add \
+          -c {{ groups['couchbase'][0] }} \
+          -u {{ couchbase_username }} \
+          -p {{ couchbase_password }} \
+          --server-add={{ inventory_hostname }}:8091 \
+          --server-add-username={{ couchbase_username }} \ 
+          --server-add-password={{ couchbase_password }};
+      fi
     when: inventory_hostname in groups['couchbase'][1:]
 
   - name: Rebalance cluster
