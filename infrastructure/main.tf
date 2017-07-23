@@ -35,6 +35,6 @@ module "app" {
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]
   subnets         = ["${module.networking.subnets}"]
-  min_size        = "1"
-  max_size        = "1"
+  min_size        = "3"
+  max_size        = "3"
 }
