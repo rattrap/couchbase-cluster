@@ -54,24 +54,17 @@
       name: php70-php-pecl-couchbase2
       state: present
 
-  - name: Enable PHP
+  - name: Enable PHP version
     template:
       src: templates/php70.sh.j2
       dest: /etc/profile.d/php70.sh
       owner: root
       group: root
       mode: 0644
-
-  - name: Fix server_names_hash_bucket_size
-    lineinfile:
-      dest: /etc/nginx/nginx.conf
-      regexp: '^server_names_hash_bucket_size '
-      insertafter: 'http {'
-      line: 'server_names_hash_bucket_size 128;'
       
   - name: Fix cgi.fix_pathinfo
     lineinfile:
-      dest: /etc/nginx/nginx.conf
+      dest: /etc/opt/remi/php70/php.ini
       regexp: '^cgi.fix_pathinfo=0'
       insertafter: ';cgi.fix_pathinfo=1'
       line: 'cgi.fix_pathinfo=0'
@@ -88,6 +81,42 @@
       regexp: '^group = '
       line: 'group = nginx'
 
+  - name: Fix fpm pm
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm = '
+      line: 'pm = static'
+
+  - name: Fix fpm pm.max_children
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm.max_children = '
+      line: 'pm.max_children = 192'
+
+  - name: Fix fpm pm.start_servers
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm.start_servers = '
+      line: 'pm.start_servers = 96'
+
+  - name: Fix fpm pm.min_spare_servers
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm.min_spare_servers = '
+      line: 'pm.min_spare_servers = 96'
+
+  - name: Fix fpm pm.max_spare_servers
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm.max_spare_servers = '
+      line: 'pm.max_spare_servers = 160'
+
+  - name: Fix fpm pm.max_requests
+    lineinfile:
+      dest: /etc/opt/remi/php70/php-fpm.d/www.conf
+      regexp: '^pm.max_requests = '
+      line: 'pm.max_requests = 16384'
+
   - name: Enable fpm
     service:
       name: php70-php-fpm
@@ -98,6 +127,19 @@
     yum:
       name: nginx
       state: latest
+
+  - name: Fix server_names_hash_bucket_size
+    lineinfile:
+      dest: /etc/nginx/nginx.conf
+      regexp: '^server_names_hash_bucket_size '
+      insertafter: 'http {'
+      line: 'server_names_hash_bucket_size 128;'
+
+  - name: Fix worker_processes
+    lineinfile:
+      dest: /etc/nginx/nginx.conf
+      regexp: '^worker_processes '
+      line: 'worker_processes 24;'
 
   - name: Configure nginx
     template:
