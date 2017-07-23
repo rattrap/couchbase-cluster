@@ -117,12 +117,6 @@
       regexp: '^pm.max_requests = '
       line: 'pm.max_requests = 16384'
 
-  - name: Enable fpm
-    service:
-      name: php70-php-fpm
-      state: started
-      enabled: true
-
   - name: Install the latest nginx
     yum:
       name: nginx
@@ -135,6 +129,12 @@
       owner: root
       group: root
       mode: 0644
+
+  - name: Enable fpm
+    service:
+      name: php70-php-fpm
+      state: started
+      enabled: true
 
   - name: Start nginx
     service:
