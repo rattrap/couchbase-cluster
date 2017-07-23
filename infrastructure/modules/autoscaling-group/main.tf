@@ -61,4 +61,10 @@ resource "aws_autoscaling_group" "autoscaling_group" {
     value               = "${var.project}"
     propagate_at_launch = true
   }
+
+  tag {
+    key                 = "Type"
+    value               = "${var.type}"
+    propagate_at_launch = true
+  }
 }

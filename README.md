@@ -10,4 +10,5 @@ terraform apply
 ## Ansible
 ```
 ansible-playbook couchbase.yml -i hosts
+ansible-playbook app.yml -i hosts
 ```

@@ -18,12 +18,12 @@ module "couchbase" {
   project         = "${var.project}"
   type            = "couchbase"
   region          = "${var.region}"
-  ami_size        = "t2.micro"
+  ami_size        = "c3.8xlarge"
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]
   subnets         = ["${module.networking.subnets}"]
-  min_size        = "3"
-  max_size        = "3"
+  min_size        = "6"
+  max_size        = "6"
 }
 
 module "app" {
@@ -31,10 +31,10 @@ module "app" {
   project         = "${var.project}"
   type            = "app"
   region          = "${var.region}"
-  ami_size        = "t2.micro"
+  ami_size        = "c3.8xlarge"
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]
   subnets         = ["${module.networking.subnets}"]
-  min_size        = "3"
-  max_size        = "3"
+  min_size        = "6"
+  max_size        = "6"
 }
