@@ -1,0 +1,71 @@
+---
+- name: Install the php worker nodes
+  hosts: app
+  gather_facts: no
+  become: yes
+  become_method: sudo
+  vars:
+    remi_repo_url: "http://rpms.remirepo.net/enterprise/remi-release-6.rpm"
+    remi_repo_gpg_key_url: "http://rpms.remirepo.net/RPM-GPG-KEY-remi"
+
+  tasks:
+  - name: Upgrade all packages
+    yum:
+      name: "*"
+      state: latest
+
+  - name: Install remi repo.
+    yum:
+      name: "{{ remi_repo_url }}"
+      state: present
+
+  - name: Import remi GPG key.
+    rpm_key:
+      key: "{{ remi_repo_gpg_key_url }}"
+      state: present
+
+  - name: Enable epel
+    yum_repository:
+      name: epel
+      mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=$basearch
+      description: Extra Packages for Enterprise Linux 6 - $basearch
+      enabled: yes
+
+  - name: Install libcouchbase
+    yum:
+      name: libcouchbase
+      state: present
+
+  - name: Install PHP CLI
+    yum:
+      name: php70-php-cli
+      state: present
+
+  - name: Install PHP FPM
+    yum:
+      name: php70-php-fpm
+      state: present
+
+  - name: Install PHP-couchbase2
+    yum:
+      name: php70-php-pecl-couchbase2
+      state: present
+
+  - name: Enable PHP
+    template:
+      src: templates/php70.sh.j2
+      dest: /etc/profile.d/php70.sh
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Install the latest nginx
+    yum:
+      name: nginx
+      state: latest
+
+  - name: Start nginx
+    service:
+      name: nginx
+      state: started
+      enabled: true
