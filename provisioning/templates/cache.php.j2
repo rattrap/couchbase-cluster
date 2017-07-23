@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 
 $start = microtime(true);
 
-$servers = 'couchbase://{{ groups['couchbase'] | join(',') }}';
+$servers = 'couchbase://{{ groups['tag_Type_couchbase'] | join(',') }}';
 
 $couchbase_cluster = new \CouchbaseCluster($servers);
 $couchbase = $couchbase_cluster->openBucket('produse');

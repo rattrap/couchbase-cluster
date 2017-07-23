@@ -1,6 +1,6 @@
 ---
 - name: Install a Couchbase cluster
-  hosts: couchbase
+  hosts: tag_Type_couchbase
   gather_facts: no
   become: yes
   become_method: sudo
@@ -83,27 +83,27 @@
         -c {{ inventory_hostname }}:8091 \
         -u {{ couchbase_username }} \
         -p {{ couchbase_password }} \
-        --cluster-init-ramsize=256
+        --cluster-init-ramsize=10240
 
   - name: Create bucket
     shell: |
       if [[ $(/opt/couchbase/bin/couchbase-cli bucket-list -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | wc -c) -eq 0 ]]; then \
-        /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} --bucket=produse --bucket-type=memcached --bucket-port=11212 --bucket-ramsize=256; \
+        /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} --bucket=produse --bucket-type=memcached --bucket-port=11212 --bucket-ramsize=10240; \
       fi 
-    when: inventory_hostname == groups['couchbase'][0]
+    when: inventory_hostname == groups['tag_Type_couchbase'][0]
 
   - name: Cluster join
     shell: |
-      if [[ $(/opt/couchbase/bin/couchbase-cli server-list -c {{ groups['couchbase'][0] }}:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | grep {{ inventory_hostname }} | wc -c) -eq 0 ]]; then \
+      if [[ $(/opt/couchbase/bin/couchbase-cli server-list -c {{ groups['tag_Type_couchbase'][0] }}:8091 -u {{ couchbase_username }} -p {{ couchbase_password }} | grep {{ inventory_hostname }} | wc -c) -eq 0 ]]; then \
         /opt/couchbase/bin/couchbase-cli server-add \
-          -c {{ groups['couchbase'][0] }} \
+          -c {{ groups['tag_Type_couchbase'][0] }} \
           -u {{ couchbase_username }} \
           -p {{ couchbase_password }} \
           --server-add={{ inventory_hostname }}:8091 \
           --server-add-username={{ couchbase_username }} \ 
           --server-add-password={{ couchbase_password }};
       fi
-    when: inventory_hostname in groups['couchbase'][1:]
+    when: inventory_hostname in groups['tag_Type_couchbase'][1:]
 
   - name: Rebalance cluster
     shell: |
@@ -111,4 +111,4 @@
         -c 127.0.0.1:8091 \
         -u {{ couchbase_username }} \
         -p {{ couchbase_password }}
-    when: inventory_hostname == groups['couchbase'][0]
+    when: inventory_hostname == groups['tag_Type_couchbase'][0]

@@ -14,3 +14,7 @@ variable "subnets" {
 
 variable "min_size" {}
 variable "max_size" {}
+
+variable "load_balancers" {
+  type = "list"
+}

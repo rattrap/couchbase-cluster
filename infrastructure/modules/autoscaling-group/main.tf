@@ -42,6 +42,7 @@ resource "aws_autoscaling_group" "autoscaling_group" {
   depends_on           = ["aws_launch_configuration.launch_configuration"]
   name                 = "${var.project} ${var.type} autoscaling group"
   launch_configuration = "${aws_launch_configuration.launch_configuration.name}"
+  load_balancers       = ["${var.load_balancers}"]
   min_size             = "${var.min_size}"
   max_size             = "${var.max_size}"
   vpc_zone_identifier  = ["${var.subnets}"]
@@ -63,7 +64,7 @@ resource "aws_autoscaling_group" "autoscaling_group" {
   }
 
   tag {
-    key                 = "Type"
+    key                 = "type"
     value               = "${var.type}"
     propagate_at_launch = true
   }

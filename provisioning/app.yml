@@ -1,6 +1,6 @@
 ---
 - name: Install the php worker nodes
-  hosts: app
+  hosts: tag_Type_app
   gather_facts: no
   become: yes
   become_method: sudo
@@ -91,31 +91,31 @@
     lineinfile:
       dest: /etc/opt/remi/php70/php-fpm.d/www.conf
       regexp: '^pm.max_children = '
-      line: 'pm.max_children = 192'
+      line: 'pm.max_children = 384'
 
   - name: Fix fpm pm.start_servers
     lineinfile:
       dest: /etc/opt/remi/php70/php-fpm.d/www.conf
       regexp: '^pm.start_servers = '
-      line: 'pm.start_servers = 96'
+      line: 'pm.start_servers = 192'
 
   - name: Fix fpm pm.min_spare_servers
     lineinfile:
       dest: /etc/opt/remi/php70/php-fpm.d/www.conf
       regexp: '^pm.min_spare_servers = '
-      line: 'pm.min_spare_servers = 96'
+      line: 'pm.min_spare_servers = 192'
 
   - name: Fix fpm pm.max_spare_servers
     lineinfile:
       dest: /etc/opt/remi/php70/php-fpm.d/www.conf
       regexp: '^pm.max_spare_servers = '
-      line: 'pm.max_spare_servers = 160'
+      line: 'pm.max_spare_servers = 320'
 
   - name: Fix fpm pm.max_requests
     lineinfile:
       dest: /etc/opt/remi/php70/php-fpm.d/www.conf
       regexp: '^pm.max_requests = '
-      line: 'pm.max_requests = 16384'
+      line: 'pm.max_requests = 4000'
 
   - name: Install the latest nginx
     yum:
@@ -142,10 +142,18 @@
       state: started
       enabled: true
 
-  - name: Upload test file
+  - name: Upload load test file
     template:
       src: templates/cache.php.j2
       dest: "{{ web_root }}/cache.php"
+      owner: nginx
+      group: nginx
+      mode: 0755
+
+  - name: Upload test image
+    template:
+      src: templates/1x1.png
+      dest: "{{ web_root }}/1x1.png"
       owner: nginx
       group: nginx
       mode: 0755

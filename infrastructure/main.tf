@@ -22,8 +22,16 @@ module "couchbase" {
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]
   subnets         = ["${module.networking.subnets}"]
+  load_balancers  = []
   min_size        = "6"
   max_size        = "6"
+}
+
+module "load-balancer" {
+  source          = "./modules/load-balancer"
+  project         = "${var.project}"
+  security_groups = ["${module.networking.security_groups}"]
+  subnets         = ["${module.networking.subnets}"]
 }
 
 module "app" {
@@ -35,6 +43,11 @@ module "app" {
   key_name        = "${var.key_name}"
   security_groups = ["${module.networking.security_groups}"]
   subnets         = ["${module.networking.subnets}"]
+  load_balancers  = ["${module.load-balancer.name}"]
   min_size        = "6"
   max_size        = "6"
+}
+
+output "dns-name" {
+  value = "${module.load-balancer.dns-name}"
 }

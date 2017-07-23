@@ -1,12 +1,12 @@
 user nginx;
-worker_processes 24;
+worker_processes 48;
 error_log /var/log/nginx/error.log;
 pid /var/run/nginx.pid;
 
 include /usr/share/nginx/modules/*.conf;
 
 events {
-    worker_connections 1024;
+    worker_connections 2048;
 }
 
 http {
